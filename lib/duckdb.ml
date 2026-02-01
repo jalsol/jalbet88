@@ -2,6 +2,13 @@ open Core
 open Ctypes
 open Foreign
 
+type matched_data =
+  { datetime : string
+  ; tickersymbol : string
+  ; price : float
+  }
+[@@deriving sexp_of]
+
 (* DuckDB C API types *)
 type duckdb_result
 
@@ -119,7 +126,8 @@ module MatchedData = struct
 
   let insert_batch conn rows =
     rows
-    |> List.map ~f:(fun (dt, sym, price) -> sprintf "('%s','%s',%f)" dt sym price)
+    |> List.map ~f:(fun { datetime; tickersymbol; price } ->
+      sprintf "('%s','%s',%f)" datetime tickersymbol price)
     |> String.concat ~sep:","
     |> sprintf "INSERT INTO matched_data VALUES %s"
     |> execute_exn conn
@@ -128,7 +136,8 @@ module MatchedData = struct
   let load_all conn =
     query_list_exn conn "SELECT datetime, tickersymbol, price FROM matched_data"
     |> List.map ~f:(function
-      | [ dt; sym; price ] -> dt, sym, Float.of_string price
+      | [ datetime; tickersymbol; price ] ->
+        { datetime; tickersymbol; price = Float.of_string price }
       | _ -> failwith "Invalid row format")
   ;;
 

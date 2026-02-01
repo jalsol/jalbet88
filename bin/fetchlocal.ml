@@ -2,12 +2,7 @@ open Core
 open Async
 module Duckdb = Jalbet.Duckdb
 
-type matched_data =
-  { datetime : string
-  ; tickersymbol : string
-  ; price : float
-  }
-[@@deriving sexp_of]
+type matched_data = Duckdb.matched_data [@@deriving sexp_of]
 
 let load_env_file path =
   try
@@ -48,7 +43,9 @@ let query_sql =
 ;;
 
 let matched_data_type =
-  let decode (datetime, tickersymbol, price) = Ok { datetime; tickersymbol; price } in
+  let decode (datetime, tickersymbol, price) =
+    Ok Duckdb.{ datetime; tickersymbol; price }
+  in
   Caqti_type.(
     custom ~encode:(fun _ -> failwith "unused") ~decode (t3 string string float))
 ;;
@@ -67,9 +64,7 @@ let save_to_duckdb db_path rows =
       printf "Inserting %d rows in batches...\n" @@ List.length rows;
       List.chunks_of rows ~length:1000
       |> List.iteri ~f:(fun i batch ->
-        batch
-        |> List.map ~f:(fun r -> r.datetime, r.tickersymbol, r.price)
-        |> Duckdb.MatchedData.insert_batch conn;
+        Duckdb.MatchedData.insert_batch conn batch;
         if (i + 1) % 10 = 0 then printf "Inserted %d batches...\n" (i + 1));
       printf "Successfully saved to DuckDB\n"))
 ;;

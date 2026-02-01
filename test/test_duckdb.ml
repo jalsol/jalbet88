@@ -11,12 +11,12 @@ let setup_test_db () =
   Duckdb.with_database db_path ~f:(fun db ->
     Duckdb.with_connection db ~f:(fun conn ->
       Duckdb.MatchedData.create_table conn;
-      let test_data =
-        [ "2025-01-01 10:00:00", "TEST01", 100.0
-        ; "2025-01-01 10:01:00", "TEST01", 101.5
-        ; "2025-01-01 10:02:00", "TEST01", 99.8
-        ; "2025-01-01 10:03:00", "TEST02", 200.0
-        ; "2025-01-01 10:04:00", "TEST02", 205.5
+      let test_data : Duckdb.matched_data list =
+        [ { datetime = "2025-01-01 10:00:00"; tickersymbol = "TEST01"; price = 100.0 }
+        ; { datetime = "2025-01-01 10:01:00"; tickersymbol = "TEST01"; price = 101.5 }
+        ; { datetime = "2025-01-01 10:02:00"; tickersymbol = "TEST01"; price = 99.8 }
+        ; { datetime = "2025-01-01 10:03:00"; tickersymbol = "TEST02"; price = 200.0 }
+        ; { datetime = "2025-01-01 10:04:00"; tickersymbol = "TEST02"; price = 205.5 }
         ]
       in
       Duckdb.MatchedData.insert_batch conn test_data));
@@ -37,9 +37,9 @@ let%expect_test "load all rows from test database" =
   Duckdb.with_database db_path ~f:(fun db ->
     Duckdb.with_connection db ~f:(fun conn ->
       let all_data = Duckdb.MatchedData.load_all conn in
-      List.iter all_data ~f:(fun (dt, sym, price) ->
-        let date_time = String.prefix dt 16 in
-        printf "%s | %s | %.1f\n" date_time sym price);
+      List.iter all_data ~f:(fun { datetime; tickersymbol; price } ->
+        let date_time = String.prefix datetime 16 in
+        printf "%s | %s | %.1f\n" date_time tickersymbol price);
       [%expect
         {|
         2025-01-01 10:00 | TEST01 | 100.0
