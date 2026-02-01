@@ -1,0 +1,6 @@
+(library
+ (name test_jalbet)
+ (libraries core core_unix jalbet)
+ (inline_tests)
+ (preprocess
+  (pps ppx_jane ppx_expect)))
