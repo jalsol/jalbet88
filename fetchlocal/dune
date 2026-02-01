@@ -1,6 +1,7 @@
 (executable
  (public_name fetchlocal)
  (name main)
- (libraries core async caqti caqti-async caqti-driver-postgresql)
+ (libraries core async caqti caqti-async caqti-driver-postgresql ctypes ctypes.foreign)
+ (flags (:standard -cclib -lduckdb))
  (preprocess
   (pps ppx_jane)))
