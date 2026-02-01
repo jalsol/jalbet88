@@ -1,0 +1,6 @@
+(executable
+ (public_name fetchlocal)
+ (name main)
+ (libraries core async caqti caqti-async caqti-driver-postgresql)
+ (preprocess
+  (pps ppx_jane)))

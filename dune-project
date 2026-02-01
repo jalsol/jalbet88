@@ -16,5 +16,10 @@
 (package
  (name jalbet)
  (synopsis "CS408 bet bot")
- (depends ocaml dune nx talon hugin ctypes ctypes-foreign))
+ (depends
+   ocaml dune
+   nx talon hugin
+   ctypes ctypes-foreign
+   core async
+   caqti caqti-async caqti-driver-postgresql))
 

@@ -14,6 +14,11 @@ depends: [
   "hugin"
   "ctypes"
   "ctypes-foreign"
+  "core"
+  "async"
+  "caqti"
+  "caqti-async"
+  "caqti-driver-postgresql"
   "odoc" {with-doc}
 ]
 build: [
