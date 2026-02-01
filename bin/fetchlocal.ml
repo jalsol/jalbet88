@@ -1,5 +1,6 @@
 open Core
 open Async
+module Duckdb = Jalbet.Duckdb
 
 type matched_data =
   { datetime : string
@@ -40,7 +41,7 @@ let query_sql =
     LEFT JOIN "quote"."total" v
     ON m.tickersymbol = v.tickersymbol
     AND m.datetime = v.datetime
-    WHERE m.datetime >= '2023-01-01' AND m.datetime < '2026-01-01'
+    WHERE m.datetime >= '2025-12-01' AND m.datetime < '2026-01-01'
     AND m.tickersymbol LIKE 'VN30F2%'
     ORDER BY m.datetime
   |}
@@ -60,14 +61,13 @@ let save_to_duckdb db_path rows =
   Duckdb.with_database db_path ~f:(fun db ->
     Duckdb.with_connection db ~f:(fun conn ->
       printf "Creating table...\n";
-      Duckdb.create_table conn |> Result.ok_or_failwith;
+      Duckdb.MatchedData.create_table conn;
       printf "Inserting %d rows in batches...\n" @@ List.length rows;
       List.chunks_of rows ~length:1000
       |> List.iteri ~f:(fun i batch ->
         batch
         |> List.map ~f:(fun r -> r.datetime, r.tickersymbol, r.price)
-        |> Duckdb.insert_batch conn
-        |> Result.ok_or_failwith;
+        |> Duckdb.MatchedData.insert_batch conn;
         if (i + 1) % 10 = 0 then printf "Inserted %d batches...\n" (i + 1));
       printf "Successfully saved to DuckDB\n"))
 ;;

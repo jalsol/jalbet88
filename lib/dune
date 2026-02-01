@@ -1,2 +1,7 @@
 (library
- (name jalbet))
+ (name jalbet)
+ (libraries core ctypes ctypes.foreign)
+ (flags
+  (:standard -cclib -lduckdb))
+ (preprocess
+  (pps ppx_jane)))
