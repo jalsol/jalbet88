@@ -41,7 +41,7 @@ let query_sql =
     LEFT JOIN "quote"."total" v
     ON m.tickersymbol = v.tickersymbol
     AND m.datetime = v.datetime
-    WHERE m.datetime >= '2025-12-01' AND m.datetime < '2026-01-01'
+    WHERE m.datetime >= $1 AND m.datetime <= $2
     AND m.tickersymbol LIKE 'VN30F2%'
     ORDER BY m.datetime
   |}
@@ -53,7 +53,9 @@ let matched_data_type =
     custom ~encode:(fun _ -> failwith "unused") ~decode (t3 string string float))
 ;;
 
-let query = Caqti_request.Infix.(Caqti_type.unit ->* matched_data_type) @@ query_sql
+let query =
+  Caqti_request.Infix.(Caqti_type.(t2 string string) ->* matched_data_type) @@ query_sql
+;;
 
 let save_to_duckdb db_path rows =
   In_thread.run
@@ -72,13 +74,14 @@ let save_to_duckdb db_path rows =
       printf "Successfully saved to DuckDB\n"))
 ;;
 
-let run_query env db_path () =
+let run_query env db_path begin_ts end_ts () =
   let open Deferred.Let_syntax in
   match%bind get_connection_uri env |> Caqti_async.connect with
   | Error err -> return @@ Error err
   | Ok (module Db : Caqti_async.CONNECTION) ->
     printf "Fetching data from PostgreSQL...\n";
-    (match%bind Db.fold query List.cons () [] with
+    printf "Time range: %s to %s (inclusive)\n" begin_ts end_ts;
+    (match%bind Db.fold query List.cons (begin_ts, end_ts) [] with
      | Error err -> return @@ Error err
      | Ok results ->
        let results = List.rev results in
@@ -98,9 +101,21 @@ let () =
            "-o"
            (optional_with_default "matched_data.duckdb" string)
            ~doc:"PATH output database path"
+       and begin_date =
+         flag
+           "-begin"
+           (optional_with_default "2025-12-01" string)
+           ~doc:"DATE begin date (inclusive, format: YYYY-MM-DD)"
+       and end_date =
+         flag
+           "-end"
+           (optional_with_default "2025-12-31" string)
+           ~doc:"DATE end date (inclusive, format: YYYY-MM-DD)"
        in
        fun () ->
-         run_query env db_path ()
+         let begin_ts = begin_date ^ " 00:00:00" in
+         let end_ts = end_date ^ " 23:59:59" in
+         run_query env db_path begin_ts end_ts ()
          >>= function
          | Ok () -> Deferred.unit
          | Error err ->
