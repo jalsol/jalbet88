@@ -27,6 +27,10 @@ let state_of_int = function
 
 (* Low-level FFI bindings *)
 module FFI = struct
+  let () =
+    ignore (Dl.dlopen ~filename:"libduckdb.so" ~flags:[ Dl.RTLD_NOW; Dl.RTLD_GLOBAL ])
+  ;;
+
   let open_db = foreign "duckdb_open" (string @-> ptr (ptr void) @-> returning int)
   let close_db = foreign "duckdb_close" (ptr (ptr void) @-> returning void)
   let connect = foreign "duckdb_connect" (ptr void @-> ptr (ptr void) @-> returning int)
